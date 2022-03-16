@@ -1,0 +1,11 @@
+POST http://127.0.0.1:5000/mineblock
+Content-Type: application/json
+
+{}
+
+###
+http://127.0.0.1:5000/getchain
+
+
+###
+http://127.0.0.1:5000/is_valid
