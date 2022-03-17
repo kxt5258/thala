@@ -9,3 +9,64 @@ http://127.0.0.1:5000/getchain
 
 ###
 http://127.0.0.1:5000/is_valid
+
+
+
+###
+GET http://127.0.0.1:5001/getchain
+
+###
+GET http://127.0.0.1:5002/getchain
+
+###
+GET http://127.0.0.1:5003/getchain
+
+###
+POST http://127.0.0.1:5001/connectnode
+Content-Type: application/json
+
+{
+    "nodes": [
+        "http://127.0.0.1:5002",
+        "http://127.0.0.1:5003"
+    ]
+}
+
+###
+POST http://127.0.0.1:5002/connectnode
+Content-Type: application/json
+
+{
+    "nodes": [
+        "http://127.0.0.1:5001",
+        "http://127.0.0.1:5003"
+    ]
+}
+
+###
+POST http://127.0.0.1:5003/connectnode
+Content-Type: application/json
+
+{
+    "nodes": [
+        "http://127.0.0.1:5001",
+        "http://127.0.0.1:5002"
+    ]
+}
+
+###
+POST http://127.0.0.1:5001/mineblock
+Content-Type: application/json
+
+{}
+
+###
+GET http://127.0.0.1:5001/replacechain
+
+###
+GET http://127.0.0.1:5002/replacechain
+
+###
+GET http://127.0.0.1:5003/replacechain
+
+

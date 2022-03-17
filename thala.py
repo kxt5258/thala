@@ -47,7 +47,7 @@ class Blockchain:
         max_length = len(self.chain)
         for node in network:
             try:
-                response = requests.get(f'http://{node}getchain')
+                response = requests.get(f'http://{node}/getchain')
                 if response.status_code == 200:
                     data = response.json()
                     length = data['length']
@@ -56,7 +56,7 @@ class Blockchain:
                         longest_chain = chain
                         max_length = length
             except: 
-                print(f"Error connecting to {node}")
+                print(f"Error connecting to {node}", file=sys.stdout)
 
         if longest_chain:
             self.chain = longest_chain
@@ -103,6 +103,11 @@ class Blockchain:
             block_index += 1
         return True
 
+
+arguments = sys.argv
+if len(arguments) != 2:
+    raise "Usage: thala.py port"
+
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 blockchain =  Blockchain()
@@ -114,13 +119,13 @@ def mine_block():
     previous_proof = previous_block['proof']
     proof = blockchain.pow(previous_proof)
     previous_hash = blockchain.hash(previous_block)
-    blockchain.add_transaction(sender=node_address, receiver='Kinley', amount=1.5)
+    blockchain.add_transaction(sender='Thala', receiver=node_address, amount=1.5)
     new_block = blockchain.create_block(proof, previous_hash)
     response = {
         'block': new_block,
         'message': 'Congrats!',
     }
-    return jsonify(response), 200, {'ContentType':'application/json'} 
+    return jsonify(response), 200
 
 @app.route('/getchain', methods=['GET'])
 def get_chain():
@@ -128,7 +133,7 @@ def get_chain():
         'chain': blockchain.chain,
         'length': len(blockchain.chain)
     }
-    return jsonify(response), 200,  {'ContentType':'application/json'} 
+    return jsonify(response), 200
 
 @app.route('/is_valid', methods=['GET'])
 def is_valid():
@@ -138,7 +143,38 @@ def is_valid():
     else:
         response = { 'message': 'Somehting is wrong with the blockchain'}
     
-    return jsonify(response), 200, {'ContentType':'application/json'} 
+    return jsonify(response), 200
+
+@app.route('/addtransaction', methods=['POST'])
+def add_transaction():
+    body = request.get_json()
+    transaction_keys = ['sender', 'receiver', 'amount']
+    if not all (key in body for key in transaction_keys):
+        return jsonify({'message': 'Sender, Receiver, and Amount are all required fields'}) , 400
+    block_id = blockchain.add_transaction(body['sender'], body['receiver'], body['amount'])
+    response = {'message': f'This transaction will be addded to block {block_id}'}
+    return jsonify(response), 201
 
 
-app.run(host = '0.0.0.0', port = 5000)
+@app.route('/connectnode', methods=['POST'])
+def connect_node():
+    body = request.get_json()
+    print("THIS IS BODY " + str(body), file=sys.stdout)
+    nodes = body.get('nodes')
+    if nodes is None:
+        return jsonify({'message': 'No nodes'}), 400
+    for node in nodes:
+        blockchain.add_node(node)
+    return jsonify({'message': 'Nodes connected', 'total_nodes': len(blockchain.nodes)}), 200
+
+
+@app.route('/replacechain', methods=['GET'])
+def replace_chain():
+    is_chain_replaced = blockchain.replace_chain()
+    if is_chain_replaced:
+        message = 'Chain has been replaced'
+    else:
+        message = 'Your chain is still valid'
+    return jsonify( {'chain': blockchain.chain, 'message': message}), 200
+
+app.run(debug=True, host = '0.0.0.0', port = arguments[1] or 5000)
